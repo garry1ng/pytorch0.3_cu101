@@ -6,7 +6,7 @@
 #include "THCHalfAutoNumerics.cuh"
 #include "THCTensorSort.cuh"
 #include "../THC/THCTensorMathReduce.cuh"
-
+#define FULL_MASK 0xffffffff
 const int WARP_SIZE = 32;
 
 __device__ __forceinline__ bool warpHasCollision(int val)
@@ -21,8 +21,8 @@ __device__ __forceinline__ bool warpHasCollision(int val)
 
   #pragma unroll
   for (int i = 1; i <= 16; i++)
-  {
-    dup |= (__shfl(val, (laneId + i) % 32) == val);
+  { 
+    dup |= (__shfl_sync(FULL_MASK, val, (laneId + i) % 32) == val);
   }
 
 #else
@@ -39,7 +39,7 @@ __device__ __forceinline__ bool warpHasCollision(int val)
 
 #endif
 
-  return __any(dup) != 0;
+  return __any_sync(FULL_MASK, dup) != 0;
 }
 
 template <typename Dtype>
